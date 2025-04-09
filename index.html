@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Scheduling Algorithm Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-blue-800">CPU Scheduling Algorithm Simulator</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Input Section -->
+            <div class="bg-white p-6 rounded-lg shadow-md col-span-1">
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">Add Process</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Arrival Time</label>
+                        <input type="number" id="arrivalTime" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Burst Time</label>
+                        <input type="number" id="burstTime" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Priority</label>
+                        <input type="number" id="priority" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border" value="0">
+                    </div>
+                    <button id="addProcessBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                        Add Process
+                    </button>
+                </div>
+                
+                <h2 class="text-xl font-semibold mt-8 mb-4 text-blue-700">Algorithm Selection</h2>
+                <div class="space-y-2">
+                    <div class="flex items-center">
+                        <input type="radio" id="fcfs" name="algorithm" value="FCFS" class="h-4 w-4 text-blue-600 focus:ring-blue-500" checked>
+                        <label for="fcfs" class="ml-2 block text-sm text-gray-700">FCFS (First Come First Serve)</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="sjf" name="algorithm" value="SJF" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                        <label for="sjf" class="ml-2 block text-sm text-gray-700">SJF (Shortest Job First)</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="rr" name="algorithm" value="RR" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                        <label for="rr" class="ml-2 block text-sm text-gray-700">Round Robin</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="radio" id="priority" name="algorithm" value="Priority" class="h-4 w-4 text-blue-600 focus:ring-blue-500">
+                        <label for="priority" class="ml-2 block text-sm text-gray-700">Priority Scheduling</label>
+                    </div>
+                </div>
+                
+                <div id="quantumContainer" class="mt-4 hidden">
+                    <label class="block text-sm font-medium text-gray-700">Time Quantum</label>
+                    <input type="number" id="timeQuantum" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border" value="2">
+                </div>
+                
+                <button id="runSimulationBtn" class="w-full mt-6 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                    Run Simulation
+                </button>
+                <button id="resetBtn" class="w-full mt-2 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-200">
+                    Reset
+                </button>
+            </div>
+            
+            <!-- Process List -->
+            <div class="bg-white p-6 rounded-lg shadow-md col-span-1">
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">Process List</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PID</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Arrival</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Burst</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="processTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Processes will be added here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Results Section -->
+            <div class="bg-white p-6 rounded-lg shadow-md col-span-1 lg:col-span-1">
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">Gantt Chart</h2>
+                <div id="ganttChart" class="bg-gray-50 p-4 rounded-md h-64 overflow-x-auto">
+                    <!-- Gantt chart will be rendered here -->
+                    <div class="text-center text-gray-500">Gantt chart will appear here after simulation</div>
+                </div>
+                
+                <h2 class="text-xl font-semibold mt-8 mb-4 text-blue-700">Performance Metrics</h2>
+                <div id="metrics" class="bg-gray-50 p-4 rounded-md">
+                    <div class="text-center text-gray-500">Metrics will appear here after simulation</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="process.js"></script>
+    <script src="algorithms.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
