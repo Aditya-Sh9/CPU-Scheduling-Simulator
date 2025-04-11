@@ -93,6 +93,28 @@ tr:hover {
   z-index: 2;
 }
 
+/* Add to your styles.css */
+#ganttChart .timeline-number {
+  position: absolute;
+  bottom: 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+#ganttChart .process-container {
+  position: relative;
+  height: 40px;
+  margin-bottom: 10px;
+}
+
+#ganttChart .timeline-container {
+  position: relative;
+  height: 24px;
+  width: 100%;
+}
+
 .idle-bar {
   background-color: #374151;
   border-color: #4b5563;

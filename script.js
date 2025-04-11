@@ -224,49 +224,32 @@ if (!processColorInput) {
         const containerWidth = ganttChart.clientWidth;
         const padding = 20; // Padding on both sides
         const availableWidth = containerWidth - (padding * 2);
-        const scale = availableWidth / Math.max(maxTime, 1); // Ensure we don't divide by zero
+        const scale = availableWidth / Math.max(maxTime, 1);
         const barHeight = 40;
-        const timelineHeight = 60;
+        const timelineHeight = 80; // Increased height for better spacing
     
         // Create main container
         const container = document.createElement('div');
         container.className = 'relative w-full';
-        container.style.height = `${timelineHeight + barHeight}px`;
+        container.style.height = `${timelineHeight}px`;
     
-        // Create timeline header
-        const timelineHeader = document.createElement('div');
-        timelineHeader.className = 'flex items-center h-10 border-b border-gray-600 mb-2';
+        // Create process bars container (top section)
+        const processContainer = document.createElement('div');
+        processContainer.className = 'relative';
+        processContainer.style.height = `${barHeight}px`;
+        processContainer.style.marginBottom = '10px';
     
-        // Add timeline markers (dynamic spacing)
-        const timeStep = Math.ceil(maxTime / 10); // Show about 10 markers max
-        for (let t = 0; t <= maxTime; t += timeStep) {
-            if (t === maxTime || t % timeStep === 0) {
-                const markerLine = document.createElement('div');
-                markerLine.className = 'absolute bottom-0 h-3 w-px bg-gray-500';
-                markerLine.style.left = `${padding + (t * scale)}px`;
-    
-                const markerLabel = document.createElement('div');
-                markerLabel.className = 'absolute bottom-4 text-xs text-gray-400 whitespace-nowrap';
-                markerLabel.style.left = `${padding + (t * scale)}px`;
-                markerLabel.style.transform = 'translateX(-50%)';
-                markerLabel.textContent = t;
-    
-                timelineHeader.appendChild(markerLine);
-                timelineHeader.appendChild(markerLabel);
-            }
-        }
-    
-        // Create process bars container
-        const processBarsContainer = document.createElement('div');
-        processBarsContainer.className = 'relative';
-        processBarsContainer.style.height = `${barHeight}px`;
+        // Create timeline numbers container (bottom section)
+        const timelineContainer = document.createElement('div');
+        timelineContainer.className = 'flex relative h-6 mt-2';
     
         // Add segments to the Gantt chart
         segments.forEach(segment => {
             const left = padding + (segment.start * scale);
             const width = segment.duration * scale;
-            const minWidth = 24; // Minimum width for visibility
+            const minWidth = 24;
     
+            // Process bar
             const bar = document.createElement('div');
             bar.className = 'absolute top-1/2 -translate-y-1/2 h-8 flex items-center justify-center text-xs font-bold rounded-sm shadow-md transition-all';
             bar.style.left = `${left}px`;
@@ -283,27 +266,39 @@ if (!processColorInput) {
                 bar.title = `${segment.process.pid} (${segment.start}-${segment.end})`;
                 if (width > 30) bar.textContent = segment.process.pid;
             }
+            processContainer.appendChild(bar);
     
-            processBarsContainer.appendChild(bar);
+            // Timeline number (only at segment starts)
+            if (segment.type !== 'idle') {
+                const timeLabel = document.createElement('div');
+                timeLabel.className = 'absolute text-xs text-gray-400';
+                timeLabel.style.left = `${left}px`;
+                timeLabel.style.transform = 'translateX(-50%)';
+                timeLabel.textContent = segment.start;
+                timelineContainer.appendChild(timeLabel);
+            }
         });
+    
+        // Add final end time label
+        const endLabel = document.createElement('div');
+        endLabel.className = 'absolute text-xs text-gray-400';
+        endLabel.style.left = `${padding + (maxTime * scale)}px`;
+        endLabel.style.transform = 'translateX(-50%)';
+        endLabel.textContent = maxTime;
+        timelineContainer.appendChild(endLabel);
     
         // Helper function for text contrast
         function getContrastColor(hexColor) {
-            // Convert hex to RGB
             const r = parseInt(hexColor.substr(1, 2), 16);
             const g = parseInt(hexColor.substr(3, 2), 16);
             const b = parseInt(hexColor.substr(5, 2), 16);
-            
-            // Calculate luminance
             const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            
-            // Return black or white depending on background brightness
             return luminance > 0.5 ? '#000000' : '#ffffff';
         }
     
         // Assemble all components
-        container.appendChild(timelineHeader);
-        container.appendChild(processBarsContainer);
+        container.appendChild(processContainer);
+        container.appendChild(timelineContainer);
         ganttChart.appendChild(container);
     }
     
