@@ -56,6 +56,7 @@ function roundRobin(processes, timeQuantum) {
     const queue = [];
     let currentTime = 0;
     const completed = [];
+    const executionSegments = [];
     
     while (processes.length > 0 || queue.length > 0) {
         // Add arrived processes to queue
@@ -67,12 +68,19 @@ function roundRobin(processes, timeQuantum) {
             const current = queue.shift();
             
             // Mark start time if not already set
-            if (current.startTime === -1) {
+            if (current.startTime === undefined) {
                 current.startTime = currentTime;
             }
             
             // Execute for time quantum or remaining time
             const execTime = Math.min(timeQuantum, current.remainingTime);
+            executionSegments.push({
+                process: current,
+                start: currentTime,
+                end: currentTime + execTime,
+                duration: execTime
+            });
+            
             current.remainingTime -= execTime;
             currentTime += execTime;
             
@@ -89,13 +97,23 @@ function roundRobin(processes, timeQuantum) {
                 current.waitingTime = current.turnaroundTime - current.burstTime;
                 completed.push(current);
             }
-        } else {
+        } else if (processes.length > 0) {
             // CPU idle time
+            executionSegments.push({
+                type: 'idle',
+                start: currentTime,
+                end: processes[0].arrivalTime,
+                duration: processes[0].arrivalTime - currentTime
+            });
             currentTime = processes[0].arrivalTime;
         }
     }
     
-    return completed;
+    // Return both segments and completed processes
+    return {
+        segments: executionSegments,
+        completedProcesses: completed
+    };
 }
 
 function priorityScheduling(processes) {
