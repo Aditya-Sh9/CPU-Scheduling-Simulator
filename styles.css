@@ -77,7 +77,33 @@ tr:hover {
   border-radius: 0.5rem;
   padding: 1rem;
   border: 1px solid #374151;
+  margin: 0 1rem;
   overflow: hidden; /* Changed from overflow-x-auto */
+  display: flex;
+  align-items: center; /* Vertical centering */
+  justify-content: center; /* Horizontal centering */ /* Added left margin */
+  scroll-margin-top: 20px; /* Space when scrolling to */
+}
+
+.gantt-container {
+  
+  width: 100%;
+  max-width: calc(100% - 40px);
+}
+
+/* Gantt Chart Styles */
+#ganttChart {
+  min-height: 120px;
+  background-color: #1f2937;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #374151;
+  margin: 0 auto;
+  overflow-x: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-margin-top: 20px;
 }
 
 #ganttChart .process-bar {
@@ -93,7 +119,6 @@ tr:hover {
   z-index: 2;
 }
 
-/* Add to your styles.css */
 #ganttChart .timeline-number {
   position: absolute;
   bottom: 0;
@@ -119,7 +144,6 @@ tr:hover {
   background-color: #374151;
   border-color: #4b5563;
 }
-
 /* Color Options */
 .color-option {
   transition: all 0.2s ease;

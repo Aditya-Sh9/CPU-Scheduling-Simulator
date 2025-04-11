@@ -195,6 +195,14 @@ if (!processColorInput) {
                 // Render results
                 renderGanttChart(result.segments);
                 renderMetrics(result.completedProcesses);
+
+                setTimeout(() => {
+                const ganttElement = document.getElementById('ganttChart');
+                ganttElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }, 50);
                 
             } catch (error) {
                 // Handle errors gracefully
@@ -211,7 +219,6 @@ if (!processColorInput) {
     }
     
     function renderGanttChart(segments) {
-        // Clear previous content
         ganttChart.innerHTML = '';
         
         if (!segments || segments.length === 0) {
@@ -219,33 +226,36 @@ if (!processColorInput) {
             return;
         }
     
-        // Calculate maximum time and container dimensions
         const maxTime = Math.max(...segments.map(s => s.end));
         const containerWidth = ganttChart.clientWidth;
-        const padding = 20; // Padding on both sides
-        const availableWidth = containerWidth - (padding * 2);
+        const leftPadding = 20;
+        const rightPadding = 20;
+        const availableWidth = containerWidth - (leftPadding + rightPadding);
         const scale = availableWidth / Math.max(maxTime, 1);
         const barHeight = 40;
-        const timelineHeight = 80; // Increased height for better spacing
+        const timelineHeight = 30;
     
-        // Create main container
+        // Main container
         const container = document.createElement('div');
-        container.className = 'relative w-full';
-        container.style.height = `${timelineHeight}px`;
+        container.className = 'relative mx-auto';
+        container.style.width = '100%';
+        container.style.minWidth = `${maxTime * scale + leftPadding + rightPadding}px`;
     
-        // Create process bars container (top section)
+        // Process bars container
         const processContainer = document.createElement('div');
         processContainer.className = 'relative';
         processContainer.style.height = `${barHeight}px`;
         processContainer.style.marginBottom = '10px';
     
-        // Create timeline numbers container (bottom section)
+        // Timeline numbers container
         const timelineContainer = document.createElement('div');
         timelineContainer.className = 'flex relative h-6 mt-2';
     
-        // Add segments to the Gantt chart
+        // Create a set to track which times we've already labeled to avoid duplicates
+        const labeledTimes = new Set();
+    
         segments.forEach(segment => {
-            const left = padding + (segment.start * scale);
+            const left = leftPadding + (segment.start * scale);
             const width = segment.duration * scale;
             const minWidth = 24;
     
@@ -268,26 +278,30 @@ if (!processColorInput) {
             }
             processContainer.appendChild(bar);
     
-            // Timeline number (only at segment starts)
-            if (segment.type !== 'idle') {
+            // Timeline number at the start of each segment (if not already labeled)
+            if (!labeledTimes.has(segment.start)) {
                 const timeLabel = document.createElement('div');
                 timeLabel.className = 'absolute text-xs text-gray-400';
                 timeLabel.style.left = `${left}px`;
                 timeLabel.style.transform = 'translateX(-50%)';
+                timeLabel.style.bottom = '0';
                 timeLabel.textContent = segment.start;
                 timelineContainer.appendChild(timeLabel);
+                labeledTimes.add(segment.start);
             }
         });
     
-        // Add final end time label
-        const endLabel = document.createElement('div');
-        endLabel.className = 'absolute text-xs text-gray-400';
-        endLabel.style.left = `${padding + (maxTime * scale)}px`;
-        endLabel.style.transform = 'translateX(-50%)';
-        endLabel.textContent = maxTime;
-        timelineContainer.appendChild(endLabel);
+        // Final end time label
+        if (!labeledTimes.has(maxTime)) {
+            const endLabel = document.createElement('div');
+            endLabel.className = 'absolute text-xs text-gray-400';
+            endLabel.style.left = `${leftPadding + (maxTime * scale)}px`;
+            endLabel.style.transform = 'translateX(-50%)';
+            endLabel.style.bottom = '0';
+            endLabel.textContent = maxTime;
+            timelineContainer.appendChild(endLabel);
+        }
     
-        // Helper function for text contrast
         function getContrastColor(hexColor) {
             const r = parseInt(hexColor.substr(1, 2), 16);
             const g = parseInt(hexColor.substr(3, 2), 16);
@@ -296,10 +310,18 @@ if (!processColorInput) {
             return luminance > 0.5 ? '#000000' : '#ffffff';
         }
     
-        // Assemble all components
+        // Assemble components
         container.appendChild(processContainer);
         container.appendChild(timelineContainer);
         ganttChart.appendChild(container);
+    
+        // Auto-scroll to chart
+        setTimeout(() => {
+            ganttChart.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }, 100);
     }
     
     function createSegmentsFromProcesses(processes) {
