@@ -1,28 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
-// Replace your current DOM element declarations with:
-const addProcessBtn = document.getElementById('addProcessBtn');
-const runSimulationBtn = document.getElementById('runSimulationBtn');
-const resetBtn = document.getElementById('resetBtn');
-const arrivalTimeInput = document.getElementById('arrivalTime');
-const burstTimeInput = document.getElementById('burstTime');
-const priorityInput = document.getElementById('priority');
-const processTableBody = document.getElementById('processTableBody');
-const ganttChart = document.getElementById('ganttChart');
-const metricsDiv = document.getElementById('metrics');
-const quantumContainer = document.getElementById('quantumContainer');
-const timeQuantumInput = document.getElementById('timeQuantum');
-const processMetricsBody = document.getElementById('processMetricsBody');
+    // DOM element declarations
+    const addProcessBtn = document.getElementById('addProcessBtn');
+    const runSimulationBtn = document.getElementById('runSimulationBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const arrivalTimeInput = document.getElementById('arrivalTime');
+    const burstTimeInput = document.getElementById('burstTime');
+    const priorityInput = document.getElementById('priority');
+    const processTableBody = document.getElementById('processTableBody');
+    const ganttChart = document.getElementById('ganttChart');
+    const metricsDiv = document.getElementById('metrics');
+    const quantumContainer = document.getElementById('quantumContainer');
+    const timeQuantumInput = document.getElementById('timeQuantum');
+    const processMetricsBody = document.getElementById('processMetricsBody');
+    const preemptionContainer = document.getElementById('preemptionContainer');
 
-// Modified color input selection with null check
-let processColorInput = document.getElementById('processColor');
-if (!processColorInput) {
-    console.warn("Process color input not found, creating fallback");
-    processColorInput = document.createElement('input');
-    processColorInput.type = 'color';
-    processColorInput.value = '#3b82f6';
-    document.body.appendChild(processColorInput);
-}
+    // Process color input with fallback
+    let processColorInput = document.getElementById('processColor');
+    if (!processColorInput) {
+        console.warn("Process color input not found, creating fallback");
+        processColorInput = document.createElement('input');
+        processColorInput.type = 'color';
+        processColorInput.value = '#3b82f6';
+        document.body.appendChild(processColorInput);
+    }
 
+    // Color options click handler
     document.querySelectorAll('.color-option').forEach(option => {
         option.addEventListener('click', function() {
             const color = this.getAttribute('data-color');
@@ -30,53 +32,71 @@ if (!processColorInput) {
         });
     });
 
-
     // Process management
     let processes = [];
     let nextPid = 1;
-    
-    // Keep track of selected algorithm
     let selectedAlgorithm = 'FCFS';
-    
+    let isPreemptive = false;
+
     // Event Listeners
     addProcessBtn.addEventListener('click', addProcess);
     runSimulationBtn.addEventListener('click', runSimulation);
     resetBtn.addEventListener('click', resetSimulation);
     
+    // Algorithm tab selection
     document.querySelectorAll('.algo-tab').forEach(tab => {
         tab.addEventListener('click', function() {
-          // Remove active state from all tabs
-          document.querySelectorAll('.algo-tab').forEach(t => {
-            t.classList.remove('active', 'bg-gradient-to-r', 'from-blue-500', 'to-blue-600', 'text-white', 'shadow-sm');
-            t.classList.add('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
-          });
-          
-          // Add active state to clicked tab
-          this.classList.add('active', 'bg-gradient-to-r', 'from-blue-200', 'to-blue-300', 'text-white', 'shadow-sm');
-          this.classList.remove('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
-          
-          // Get selected algorithm
-          selectedAlgorithm = this.dataset.algo;
-          
-          // Show time quantum only for Round Robin
-          document.getElementById('quantumContainer').classList.toggle('hidden', selectedAlgorithm !== 'RR');
+            // Remove active state from all tabs
+            document.querySelectorAll('.algo-tab').forEach(t => {
+                t.classList.remove('active', 'bg-gradient-to-r', 'from-blue-500', 'to-blue-600', 'text-white', 'shadow-sm');
+                t.classList.add('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+            });
+            
+            // Add active state to clicked tab
+            this.classList.add('active', 'bg-gradient-to-r', 'from-blue-200', 'to-blue-300', 'text-white', 'shadow-sm');
+            this.classList.remove('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+            
+            // Update selected algorithm
+            selectedAlgorithm = this.dataset.algo;
+            
+            // Show/hide quantum and preemption containers
+            quantumContainer.classList.toggle('hidden', selectedAlgorithm !== 'RR');
+            preemptionContainer.classList.toggle('hidden', !(selectedAlgorithm === 'SJF' || selectedAlgorithm === 'Priority'));
         });
-      });
-      
-      // Initialize with FCFS selected
-      document.querySelector('.algo-tab[data-algo="FCFS"]').click();
-
+    });
     
+    // Preemption tab selection
+    document.querySelectorAll('.preemption-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active state from all tabs
+            document.querySelectorAll('.preemption-tab').forEach(t => {
+                t.classList.remove('active', 'bg-gradient-to-r', 'from-blue-500', 'to-blue-600', 'text-white', 'shadow-sm');
+                t.classList.add('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+            });
+            
+            // Add active state to clicked tab
+            this.classList.add('active', 'bg-gradient-to-r', 'from-blue-200', 'to-blue-300', 'text-white', 'shadow-sm');
+            this.classList.remove('bg-blue-100', 'hover:bg-blue-200', 'text-blue-800');
+            
+            // Update preemption setting
+            isPreemptive = this.dataset.preemptive === 'true';
+        });
+    });
+
+    // Initialize with FCFS selected
+    document.querySelector('.algo-tab[data-algo="FCFS"]').click();
+    document.querySelector('.preemption-tab[data-preemptive="false"]').click();
+
     // Functions
     function addProcess() {
         const arrivalTime = parseInt(arrivalTimeInput.value);
         const burstTime = parseInt(burstTimeInput.value);
         const priority = parseInt(priorityInput.value || 0);
-        const color = processColorInput.value; // Use the stored reference
+        const color = processColorInput.value;
         
         // Validation
-        if (isNaN(arrivalTime) || arrivalTime < 0) {
-            alert('Please enter a valid arrival time (≥ 0)');
+        if (isNaN(arrivalTime)){
+            alert('Please enter a valid arrival time');
             return;
         }
         
@@ -151,12 +171,11 @@ if (!processColorInput) {
         `;
         metricsDiv.innerHTML = '<div class="text-center text-gray-500">Calculating metrics...</div>';
     
-        // Run simulation after brief delay to ensure loading shows
+        // Run simulation after brief delay
         setTimeout(() => {
             try {
                 let result;
                 
-                // Run selected algorithm
                 switch (selectedAlgorithm) {
                     case 'FCFS':
                         result = {
@@ -165,10 +184,10 @@ if (!processColorInput) {
                         };
                         break;
                     case 'SJF':
-                        result = {
-                            segments: createSegmentsFromProcesses(sjf([...processes])),
-                            completedProcesses: sjf([...processes])
-                        };
+                        const processesForSJF = processes.map(p => {
+                            return new Process(p.pid, p.arrivalTime, p.burstTime, p.priority, p.color);
+                        });
+                        result = sjf(processesForSJF, isPreemptive);
                         break;
                     case 'RR':
                         const timeQuantum = parseInt(timeQuantumInput.value);
@@ -183,10 +202,10 @@ if (!processColorInput) {
                         result = roundRobin(processesForRR, timeQuantum);
                         break;
                     case 'Priority':
-                        result = {
-                            segments: createSegmentsFromProcesses(priorityScheduling([...processes])),
-                            completedProcesses: priorityScheduling([...processes])
-                        };
+                        const processesForPriority = processes.map(p => {
+                            return new Process(p.pid, p.arrivalTime, p.burstTime, p.priority, p.color);
+                        });
+                        result = priorityScheduling(processesForPriority, isPreemptive);
                         break;
                     default:
                         throw new Error('Invalid algorithm selected');
@@ -197,15 +216,14 @@ if (!processColorInput) {
                 renderMetrics(result.completedProcesses);
 
                 setTimeout(() => {
-                const ganttElement = document.getElementById('ganttChart');
-                ganttElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }, 50);
+                    const ganttElement = document.getElementById('ganttChart');
+                    ganttElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }, 50);
                 
             } catch (error) {
-                // Handle errors gracefully
                 ganttChart.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-48 text-red-500">
                         <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
@@ -251,7 +269,7 @@ if (!processColorInput) {
         const timelineContainer = document.createElement('div');
         timelineContainer.className = 'flex relative h-6 mt-2';
     
-        // Create a set to track which times we've already labeled to avoid duplicates
+        // Create a set to track which times we've already labeled
         const labeledTimes = new Set();
     
         segments.forEach(segment => {
@@ -278,7 +296,7 @@ if (!processColorInput) {
             }
             processContainer.appendChild(bar);
     
-            // Timeline number at the start of each segment (if not already labeled)
+            // Timeline number at the start of each segment
             if (!labeledTimes.has(segment.start)) {
                 const timeLabel = document.createElement('div');
                 timeLabel.className = 'absolute text-xs text-gray-400';
@@ -314,14 +332,6 @@ if (!processColorInput) {
         container.appendChild(processContainer);
         container.appendChild(timelineContainer);
         ganttChart.appendChild(container);
-    
-        // Auto-scroll to chart
-        setTimeout(() => {
-            ganttChart.scrollIntoView({ 
-                behavior: 'smooth',
-                block: 'center'
-            });
-        }, 100);
     }
     
     function createSegmentsFromProcesses(processes) {
@@ -354,8 +364,6 @@ if (!processColorInput) {
         return segments;
     }
     
-    
-    
     function renderMetrics(processes) {
         if (processes.length === 0) {
             metricsDiv.innerHTML = '<div class="text-center text-gray-500">No metrics available</div>';
@@ -368,7 +376,7 @@ if (!processColorInput) {
         const avgWaitingTime = totalWaitingTime / processes.length;
         const avgTurnaroundTime = totalTurnaroundTime / processes.length;
     
-        // Calculate throughput (processes per unit time)
+        // Calculate throughput
         const lastCompletionTime = Math.max(...processes.map(p => p.endTime));
         const throughput = processes.length / lastCompletionTime;
     
@@ -469,5 +477,4 @@ if (!processColorInput) {
         metricsDiv.innerHTML = '<div class="text-center text-gray-500">Metrics will appear here after simulation</div>';
         processMetricsBody.innerHTML = '';
     }
-    
 });

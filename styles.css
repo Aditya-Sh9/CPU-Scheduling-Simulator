@@ -197,3 +197,15 @@ tr:hover {
 .metric-item:hover {
   background-color: rgba(30, 58, 138, 0.2);
 }
+
+/* Add to styles.css */
+.preemption-tab {
+  background-color: var(--darker);
+  color: var(--light);
+}
+
+.preemption-tab.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}

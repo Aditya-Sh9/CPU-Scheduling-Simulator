@@ -18,37 +18,97 @@ function fcfs(processes) {
     return processes;
 }
 
-function sjf(processes) {
+function sjf(processes, isPreemptive = false) {
     processes = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime);
     let currentTime = 0;
     const readyQueue = [];
     const completed = [];
+    const executionSegments = [];
     
     while (processes.length > 0 || readyQueue.length > 0) {
         // Add arrived processes to ready queue
         while (processes.length > 0 && processes[0].arrivalTime <= currentTime) {
-            readyQueue.push(processes.shift());
+            const process = processes.shift();
+            readyQueue.push(new Process(
+                process.pid,
+                process.arrivalTime,
+                process.burstTime,
+                process.priority,
+                process.color
+            ));
         }
         
         if (readyQueue.length > 0) {
-            // Sort by burst time (SJF)
-            readyQueue.sort((a, b) => a.burstTime - b.burstTime);
-            const current = readyQueue.shift();
+            // Sort by remaining time (SJF)
+            readyQueue.sort((a, b) => a.remainingTime - b.remainingTime);
+            const current = readyQueue[0];
             
-            current.startTime = currentTime;
-            current.endTime = currentTime + current.burstTime;
-            current.turnaroundTime = current.endTime - current.arrivalTime;
-            current.waitingTime = current.startTime - current.arrivalTime;
-            
-            currentTime = current.endTime;
-            completed.push(current);
+            if (isPreemptive) {
+                // Find next arrival time that might preempt
+                let nextArrival = processes.length > 0 ? processes[0].arrivalTime : Infinity;
+                
+                // Execute until completion or next arrival
+                const execTime = Math.min(
+                    current.remainingTime,
+                    nextArrival - currentTime
+                );
+                
+                // Mark start time if not already set
+                if (current.startTime === undefined) {
+                    current.startTime = currentTime;
+                }
+                
+                executionSegments.push({
+                    process: current,
+                    start: currentTime,
+                    end: currentTime + execTime,
+                    duration: execTime
+                });
+                
+                current.remainingTime -= execTime;
+                currentTime += execTime;
+                
+                // Check if process completed
+                if (current.remainingTime <= 0) {
+                    current.endTime = currentTime;
+                    current.turnaroundTime = current.endTime - current.arrivalTime;
+                    current.waitingTime = current.turnaroundTime - current.burstTime;
+                    completed.push(readyQueue.shift());
+                }
+            } else {
+                // Non-preemptive - execute entire burst time
+                current.startTime = currentTime;
+                current.endTime = currentTime + current.burstTime;
+                current.turnaroundTime = current.endTime - current.arrivalTime;
+                current.waitingTime = current.startTime - current.arrivalTime;
+                
+                executionSegments.push({
+                    process: current,
+                    start: currentTime,
+                    end: current.endTime,
+                    duration: current.burstTime
+                });
+                
+                currentTime = current.endTime;
+                completed.push(readyQueue.shift());
+            }
         } else {
             // CPU idle time
+            const idleTime = processes[0].arrivalTime - currentTime;
+            executionSegments.push({
+                type: 'idle',
+                start: currentTime,
+                end: processes[0].arrivalTime,
+                duration: idleTime
+            });
             currentTime = processes[0].arrivalTime;
         }
     }
     
-    return completed;
+    return {
+        segments: executionSegments,
+        completedProcesses: completed
+    };
 }
 
 function roundRobin(processes, timeQuantum) {
@@ -109,43 +169,102 @@ function roundRobin(processes, timeQuantum) {
         }
     }
     
-    // Return both segments and completed processes
     return {
         segments: executionSegments,
         completedProcesses: completed
     };
 }
 
-function priorityScheduling(processes) {
+function priorityScheduling(processes, isPreemptive = false) {
     // Lower number means higher priority
     processes = [...processes].sort((a, b) => a.arrivalTime - b.arrivalTime || a.priority - b.priority);
     let currentTime = 0;
     const readyQueue = [];
     const completed = [];
+    const executionSegments = [];
     
     while (processes.length > 0 || readyQueue.length > 0) {
         // Add arrived processes to ready queue
         while (processes.length > 0 && processes[0].arrivalTime <= currentTime) {
-            readyQueue.push(processes.shift());
+            const process = processes.shift();
+            readyQueue.push(new Process(
+                process.pid,
+                process.arrivalTime,
+                process.burstTime,
+                process.priority,
+                process.color
+            ));
         }
         
         if (readyQueue.length > 0) {
             // Sort by priority (lower number = higher priority)
             readyQueue.sort((a, b) => a.priority - b.priority);
-            const current = readyQueue.shift();
+            const current = readyQueue[0];
             
-            current.startTime = currentTime;
-            current.endTime = currentTime + current.burstTime;
-            current.turnaroundTime = current.endTime - current.arrivalTime;
-            current.waitingTime = current.startTime - current.arrivalTime;
-            
-            currentTime = current.endTime;
-            completed.push(current);
+            if (isPreemptive) {
+                // Find next arrival time that might preempt
+                let nextArrival = processes.length > 0 ? processes[0].arrivalTime : Infinity;
+                
+                // Execute until completion or next arrival
+                const execTime = Math.min(
+                    current.remainingTime,
+                    nextArrival - currentTime
+                );
+                
+                // Mark start time if not already set
+                if (current.startTime === undefined) {
+                    current.startTime = currentTime;
+                }
+                
+                executionSegments.push({
+                    process: current,
+                    start: currentTime,
+                    end: currentTime + execTime,
+                    duration: execTime
+                });
+                
+                current.remainingTime -= execTime;
+                currentTime += execTime;
+                
+                // Check if process completed
+                if (current.remainingTime <= 0) {
+                    current.endTime = currentTime;
+                    current.turnaroundTime = current.endTime - current.arrivalTime;
+                    current.waitingTime = current.turnaroundTime - current.burstTime;
+                    completed.push(readyQueue.shift());
+                }
+            } else {
+                // Non-preemptive - execute entire burst time
+                current.startTime = currentTime;
+                current.endTime = currentTime + current.burstTime;
+                current.turnaroundTime = current.endTime - current.arrivalTime;
+                current.waitingTime = current.startTime - current.arrivalTime;
+                
+                executionSegments.push({
+                    process: current,
+                    start: currentTime,
+                    end: current.endTime,
+                    duration: current.burstTime
+                });
+                
+                currentTime = current.endTime;
+                completed.push(readyQueue.shift());
+            }
         } else {
             // CPU idle time
+            const idleTime = processes[0].arrivalTime - currentTime;
+            executionSegments.push({
+                type: 'idle',
+                start: currentTime,
+                end: processes[0].arrivalTime,
+                duration: idleTime
+            });
             currentTime = processes[0].arrivalTime;
         }
     }
     
-    return completed;
+    return {
+        segments: executionSegments,
+        completedProcesses: completed
+    };
 }
