@@ -453,21 +453,31 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     
         // Update process metrics table
-        processMetricsBody.innerHTML = processes.map(p => `
-            <tr class="hover:bg-blue-50 transition-colors">
-                <td class="px-4 py-3 whitespace-nowrap">
-                    <span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${p.color}"></span>
-                    <span class="font-medium">${p.pid}</span>
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap ${p.waitingTime > avgWaitingTime ? 'text-red-500' : 'text-green-500'}">
-                    ${p.waitingTime} ${p.waitingTime > avgWaitingTime ? '↑' : '↓'}
-                </td>
-                <td class="px-4 py-3 whitespace-nowrap ${p.turnaroundTime > avgTurnaroundTime ? 'text-red-500' : 'text-green-500'}">
-                    ${p.turnaroundTime} ${p.turnaroundTime > avgTurnaroundTime ? '↑' : '↓'}
-                </td>
-            </tr>
-        `).join('');
-    }
+        processMetricsBody.innerHTML = `
+        <thead>
+            
+        </thead>
+        <tbody>
+            ${processes.map(p => `
+                <tr class="hover:bg-blue-50 transition-colors">
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${p.color}"></span>
+                        <span class="font-medium">${p.pid}</span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap ${p.waitingTime > avgWaitingTime ? 'text-red-500' : 'text-green-500'}">
+                        ${p.waitingTime} ${p.waitingTime > avgWaitingTime ? '↑' : '↓'}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap ${p.turnaroundTime > avgTurnaroundTime ? 'text-red-500' : 'text-green-500'}">
+                        ${p.turnaroundTime} ${p.turnaroundTime > avgTurnaroundTime ? '↑' : '↓'}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        ${p.endTime}
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    `;
+}
     
     function resetSimulation() {
         processes = [];
